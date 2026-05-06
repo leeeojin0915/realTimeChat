@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.eojin.realtimechat.web.mapper.MessengerMapper">
+
+    <select id="findRoomsByMemberId" resultType="com.eojin.realtimechat.web.domain.dto.MessengerRoomDTO">
+        SELECT
+            r.id,
+            r.name,
+            r.created_at AS createdAt,
+            m_last.content AS lastMessage,
+            m_last.sent_at AS lastMessageAt,
+            (SELECT nickname FROM member m JOIN messenger_member mm2 ON m.id = mm2.member_id 
+             WHERE mm2.room_id = r.id AND mm2.member_id != #{memberId} LIMIT 1) AS otherMemberName,
+            (SELECT profile_image_url FROM member m JOIN messenger_member mm2 ON m.id = mm2.member_id 
+             WHERE mm2.room_id = r.id AND mm2.member_id != #{memberId} LIMIT 1) AS otherMemberProfileImage
+        FROM messenger_room r
+        JOIN messenger_member mm ON r.id = mm.room_id
+        LEFT JOIN (
+            SELECT m1.room_id, m1.content, m1.sent_at
+            FROM messenger_message m1
+            JOIN (
+                SELECT room_id, MAX(id) as max_id
+                FROM messenger_message
+                GROUP BY room_id
+            ) m2 ON m1.id = m2.max_id
+        ) m_last ON r.id = m_last.room_id
+        WHERE mm.member_id = #{memberId}
+        ORDER BY m_last.sent_at DESC NULLS LAST, r.created_at DESC
+    </select>
+
+    <select id="findExistingRoom" resultType="java.lang.Long">
+        SELECT mm1.room_id
+        FROM messenger_member mm1
+        JOIN messenger_member mm2 ON mm1.room_id = mm2.room_id
+        WHERE mm1.member_id = #{memberId}
+          AND mm2.member_id = #{friendId}
+          AND (SELECT COUNT(*) FROM messenger_member mm3 WHERE mm3.room_id = mm1.room_id) = 2
+        LIMIT 1
+    </select>
+
+</mapper>

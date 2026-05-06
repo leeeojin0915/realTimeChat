@@ -1,4 +1,4 @@
-package com.eojin.realtimechat.web.vo;
+package com.eojin.realtimechat.web.domain.vo;
 
 import lombok.Getter;
 import lombok.Setter;

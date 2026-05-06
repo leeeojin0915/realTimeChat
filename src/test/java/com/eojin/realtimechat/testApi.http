@@ -1,0 +1,21 @@
+//GET http://localhost:8080/api/consultation?status=OPEN
+//GET http://localhost:8080/api/chat/room
+
+#POST http://localhost:8080/api/consultation
+#Content-Type: application/json
+#
+#{
+#  "customerName": "홍길동",
+#  "issueContent": "테스트 상담"
+#}
+
+
+
+#POST http://localhost:8080/api/chat/rooms
+#Content-Type: application/json
+#
+#{
+#  "consultationId": 1,
+#  "roomName": "홍길동 상담방"
+#}
+

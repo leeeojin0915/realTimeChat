@@ -1,11 +1,10 @@
-/*
 package com.eojin.realtimechat.netty;
 
-import com.eojin.realtimechat.web.domain.entity.chat.SenderType;
-import com.eojin.realtimechat.web.service.chat.ChatService;
-import com.eojin.realtimechat.web.service.chat.dto.ChatDto;
+import com.eojin.realtimechat.config.ApplicationContextHolder;
+import com.eojin.realtimechat.web.domain.dto.MessageResponseDTO;
+import com.eojin.realtimechat.web.domain.entity.messenger.MessageType;
+import com.eojin.realtimechat.web.service.MessengerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -13,64 +12,81 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-@ChannelHandler.Sharable
-public class ChatWebSocketHandler_2 extends SimpleChannelInboundHandler<TextWebSocketFrame> {
+public class ChatWebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     // roomId별 채널 모음
     private static final Map<Long, ChannelGroup> ROOM_CHANNELS = new ConcurrentHashMap<>();
 
-    @Autowired(required = false)
-    private ChatService chatService; // Spring Bean 주입
-    @Override
-    public void handlerAdded(ChannelHandlerContext context){
-        log.info("Client connected: {}", context.channel().id().asShortText());
+    public void handlerRemoved(ChannelHandlerContext ctx) {
+        ROOM_CHANNELS.values().forEach(group -> group.remove(ctx.channel()));
+        log.info("Client disconnected: {}", ctx.channel().id().asShortText());
     }
-    @Override
-    public void handleRemoved(ChannelHandlerContext context){
-        log.info("Client disconnected: {}",context.channel().id().asShortText());
-        // 채널 그룹에서 제거는 broadcast 시 자동 정리되게 두거나
-        // 여기서 ROOM_CHANNELS 돌면서 제거 로직 넣어도됨
-    }
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
-        String payload = msg.text();
-        log.info("Received Message:{}",payload);
+        try {
+            String payload = msg.text();
+            log.info("Received Message: {}", payload);
 
-        ChatMessagePayload request = OBJECT_MAPPER.readValue(payload, ChatMessagePayload.class);
+            ChatPayload req = OBJECT_MAPPER.readValue(payload, ChatPayload.class);
 
-        Long roomId = request.roomId;
-        ChannelGroup group = ROOM_CHANNELS.computeIfAbsent(
-                roomId,
-                id->new DefaultChannelGroup(GlobalEventExecutor.INSTANCE)
-        );
-        group.add(ctx.channel());
+            if (req.roomId == null) {
+                ctx.writeAndFlush(new TextWebSocketFrame("{\"error\":\"roomId is required\"}"));
+                return;
+            }
 
-        // DB 저장
-        if(chatService != null){
-            chatService.sendMessage(new ChatDto.SendMessageRequest(
-                    roomId,
-                    request.senderType,
-                    request.senderName,
-                    request.message
-            ));
+            ChannelGroup group = ROOM_CHANNELS.computeIfAbsent(
+                    req.roomId,
+                    id -> new DefaultChannelGroup(GlobalEventExecutor.INSTANCE)
+            );
+            group.add(ctx.channel());
+
+            if ("join".equalsIgnoreCase(req.type)) {
+                // Return immediately without saving for join messages
+                return;
+            }
+
+            // DB 저장 및 응답 DTO 생성 (트랜잭션 내에서 모든 데이터 로드 완료)
+            MessengerService messengerService = ApplicationContextHolder.getBean(MessengerService.class);
+            MessageType messageType = MessageType.TEXT;
+            if (req.fileType != null) {
+                try {
+                    messageType = MessageType.valueOf(req.fileType.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    messageType = MessageType.FILE;
+                }
+            }
+
+            MessageResponseDTO responseDto = messengerService.saveMessage(
+                    req.roomId,
+                    req.senderId,
+                    req.content,
+                    req.fileUrl,
+                    messageType
+            );
+
+            // 브로드캐스트
+            String responseJson = OBJECT_MAPPER.writeValueAsString(responseDto);
+            group.writeAndFlush(new TextWebSocketFrame(responseJson));
+
+        } catch (Exception e) {
+            log.error("ChatWebSocketHandler error", e);
+            ctx.writeAndFlush(new TextWebSocketFrame("{\"error\":\"" + e.getMessage() + "\"}"));
         }
-
-        // 같은 room에 브로드 캐스트
-        String responseJson = OBJECT_MAPPER.writeValueAsString(request);
-        group.writeAndFlush(new TextWebSocketFrame(responseJson));
     }
 
-    public record ChatMessagePayload(
-            Long roomId,
-            SenderType senderType,
-            String senderName,
-            String message
-    ){}
+    public static class ChatPayload {
+        public Long roomId;
+        public Long senderId;
+        public String content;
+        public String fileUrl;
+        public String fileType;
+        public String type; // "join" or null
+    }
 }
-*/
+
