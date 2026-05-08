@@ -2,12 +2,14 @@ package com.eojin.realtimechat.web.controller;
 
 import com.eojin.realtimechat.web.domain.entity.messenger.Member;
 import com.eojin.realtimechat.web.domain.repository.messenger.MemberRepository;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.eojin.realtimechat.web.domain.dto.LoginRequest;
+import com.eojin.realtimechat.web.domain.dto.SignupRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
 
@@ -46,21 +48,4 @@ public class AuthController {
         return ResponseEntity.ok(newMember);
     }
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class LoginRequest {
-        private String username;
-        private String password;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class SignupRequest {
-        private String username;
-        private String password;
-        private String nickname;
-        private String profileImageUrl;
-    }
 }

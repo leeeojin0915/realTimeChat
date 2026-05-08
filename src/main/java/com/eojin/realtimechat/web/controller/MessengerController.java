@@ -8,7 +8,14 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.lang.NonNull;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/messenger")
@@ -19,12 +26,12 @@ public class MessengerController {
     private final MessengerService messengerService;
 
     @GetMapping("/friends/{memberId}")
-    public ResponseEntity<?> getFriends(@PathVariable Long memberId) {
+    public ResponseEntity<?> getFriends(@PathVariable @NonNull Long memberId) {
         return ResponseEntity.ok(messengerService.getFriends(memberId));
     }
 
     @PostMapping("/friends/{memberId}")
-    public ResponseEntity<?> addFriend(@PathVariable Long memberId, @RequestBody AddFriendRequest request) {
+    public ResponseEntity<?> addFriend(@PathVariable @NonNull Long memberId, @RequestBody @NonNull AddFriendRequest request) {
         try {
             log.info("Add friend request: memberId={}, friendUsername={}", memberId, request.getFriendUsername());
             messengerService.addFriend(memberId, request.getFriendUsername());
@@ -36,12 +43,12 @@ public class MessengerController {
     }
 
     @GetMapping("/rooms/{memberId}")
-    public ResponseEntity<?> getRooms(@PathVariable Long memberId) {
+    public ResponseEntity<?> getRooms(@PathVariable @NonNull Long memberId) {
         return ResponseEntity.ok(messengerService.getRooms(memberId));
     }
 
     @PostMapping("/rooms")
-    public ResponseEntity<?> createRoom(@RequestBody CreateRoomRequest request) {
+    public ResponseEntity<?> createRoom(@RequestBody @NonNull CreateRoomRequest request) {
         try {
             MessengerRoom room = messengerService.createRoom(request.getMemberId(), request.getFriendIds());
             return ResponseEntity.ok(room);
@@ -51,12 +58,12 @@ public class MessengerController {
     }
 
     @GetMapping("/rooms/{roomId}/messages")
-    public ResponseEntity<?> getMessages(@PathVariable Long roomId) {
+    public ResponseEntity<?> getMessages(@PathVariable @NonNull Long roomId) {
         return ResponseEntity.ok(messengerService.getMessages(roomId));
     }
 
     @DeleteMapping("/rooms/{roomId}/leave/{memberId}")
-    public ResponseEntity<?> leaveRoom(@PathVariable Long roomId, @PathVariable Long memberId) {
+    public ResponseEntity<?> leaveRoom(@PathVariable @NonNull Long roomId, @PathVariable @NonNull Long memberId) {
         try {
             messengerService.leaveRoom(roomId, memberId);
             return ResponseEntity.ok().build();
@@ -66,7 +73,7 @@ public class MessengerController {
     }
 
     @PostMapping("/members/{memberId}/profile")
-    public ResponseEntity<?> updateProfile(@PathVariable Long memberId, @RequestBody UpdateProfileRequest request) {
+    public ResponseEntity<?> updateProfile(@PathVariable @NonNull Long memberId, @RequestBody @NonNull UpdateProfileRequest request) {
         try {
             return ResponseEntity.ok(messengerService.updateProfile(memberId, request.getNickname(), request.getProfileImageUrl()));
         } catch (Exception e) {
@@ -86,6 +93,7 @@ public class MessengerController {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AddFriendRequest {
+        @NonNull
         private String friendUsername;
     }
 
@@ -93,7 +101,9 @@ public class MessengerController {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CreateRoomRequest {
+        @NonNull
         private Long memberId;
+        @NonNull
         private java.util.List<Long> friendIds;
     }
 }

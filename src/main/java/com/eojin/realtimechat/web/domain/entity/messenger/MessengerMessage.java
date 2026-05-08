@@ -1,7 +1,18 @@
 package com.eojin.realtimechat.web.domain.entity.messenger;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
+import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
 
@@ -35,7 +46,8 @@ public class MessengerMessage {
 
     protected MessengerMessage() {}
 
-    public static MessengerMessage createText(MessengerRoom room, Member sender, String content) {
+    @NonNull
+    public static MessengerMessage createText(@NonNull MessengerRoom room, @NonNull Member sender, @NonNull String content) {
         MessengerMessage msg = new MessengerMessage();
         msg.room = room;
         msg.sender = sender;
@@ -45,7 +57,8 @@ public class MessengerMessage {
         return msg;
     }
 
-    public static MessengerMessage createFile(MessengerRoom room, Member sender, String content, String fileUrl, MessageType type) {
+    @NonNull
+    public static MessengerMessage createFile(@NonNull MessengerRoom room, @NonNull Member sender, @NonNull String content, String fileUrl, @NonNull MessageType type) {
         MessengerMessage msg = new MessengerMessage();
         msg.room = room;
         msg.sender = sender;
