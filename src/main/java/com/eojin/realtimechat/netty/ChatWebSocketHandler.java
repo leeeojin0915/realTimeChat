@@ -5,6 +5,9 @@ import com.eojin.realtimechat.web.domain.dto.MessageResponseDTO;
 import com.eojin.realtimechat.web.domain.entity.messenger.MessageType;
 import com.eojin.realtimechat.web.service.MessengerService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -14,6 +17,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -35,13 +39,17 @@ public class ChatWebSocketHandler extends SimpleChannelInboundHandler<TextWebSoc
 
             ChatPayload req = OBJECT_MAPPER.readValue(payload, ChatPayload.class);
 
-            if (req.roomId == null) {
-                ctx.writeAndFlush(new TextWebSocketFrame("{\"error\":\"roomId is required\"}"));
+            if (req.roomId == null || req.senderId == null || req.content == null) {
+                ctx.writeAndFlush(new TextWebSocketFrame("{\"error\":\"roomId, senderId, and content are required\"}"));
                 return;
             }
 
+            long roomId = req.roomId;
+            long senderId = req.senderId;
+            String content = Objects.requireNonNull(req.content);
+
             ChannelGroup group = ROOM_CHANNELS.computeIfAbsent(
-                    req.roomId,
+                    roomId,
                     id -> new DefaultChannelGroup(GlobalEventExecutor.INSTANCE)
             );
             group.add(ctx.channel());
@@ -63,9 +71,9 @@ public class ChatWebSocketHandler extends SimpleChannelInboundHandler<TextWebSoc
             }
 
             MessageResponseDTO responseDto = messengerService.saveMessage(
-                    req.roomId,
-                    req.senderId,
-                    req.content,
+                    roomId,
+                    senderId,
+                    content,
                     req.fileUrl,
                     messageType
             );
@@ -80,6 +88,9 @@ public class ChatWebSocketHandler extends SimpleChannelInboundHandler<TextWebSoc
         }
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class ChatPayload {
         public Long roomId;
         public Long senderId;

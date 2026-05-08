@@ -1,7 +1,15 @@
 package com.eojin.realtimechat.web.domain.entity.messenger;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
+import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
 
@@ -25,7 +33,8 @@ public class Friendship {
 
     protected Friendship() {}
 
-    public static Friendship create(Member member, Member friend) {
+    @NonNull
+    public static Friendship create(@NonNull Member member, @NonNull Member friend) {
         Friendship fs = new Friendship();
         fs.member = member;
         fs.friend = friend;
