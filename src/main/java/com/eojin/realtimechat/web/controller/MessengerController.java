@@ -2,9 +2,9 @@ package com.eojin.realtimechat.web.controller;
 
 import com.eojin.realtimechat.web.domain.entity.messenger.MessengerRoom;
 import com.eojin.realtimechat.web.service.MessengerService;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.eojin.realtimechat.web.domain.dto.AddFriendRequest;
+import com.eojin.realtimechat.web.domain.dto.CreateRoomRequest;
+import com.eojin.realtimechat.web.domain.dto.UpdateProfileRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -81,29 +81,4 @@ public class MessengerController {
         }
     }
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UpdateProfileRequest {
-        private String nickname;
-        private String profileImageUrl;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class AddFriendRequest {
-        @NonNull
-        private String friendUsername;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class CreateRoomRequest {
-        @NonNull
-        private Long memberId;
-        @NonNull
-        private java.util.List<Long> friendIds;
-    }
 }
